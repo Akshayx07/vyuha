@@ -28,29 +28,22 @@ export const getAllHazards = async (req, res) => {
   }
 };
 
-export const getHazardById = async (req, res) => {
+export const getHazardById = async (req, res, next) => {
   try {
     const id = req.params.id;
     const hazard = await Hazard.findById(id);
     if (!hazard) {
-      return res.status(404).json({
-        error: "Hazard not found",
-      });
+      const error = new Error("Hazard not found");
+      error.statusCode = 404;
+      return next(error);
     }
     return res.status(200).json(hazard);
   } catch (error) {
-    if (error.name === "CastError") {
-      return res.status(400).json({
-        error: "Invalid hazard ID",
-      });
-    }
-    return res.status(500).json({
-      error: "Internal server error",
-    });
+    next(error);
   }
 };
 
-export const updateHazard = async (req, res) => {
+export const updateHazard = async (req, res, next) => {
   try {
     const id = req.params.id;
     const { typeofHazard, severity, status, location } = req.body;
@@ -60,56 +53,35 @@ export const updateHazard = async (req, res) => {
     if (severity !== undefined) updates.severity = severity;
     if (status !== undefined) updates.status = status;
     if (location !== undefined) updates.location = location;
+
     const hazard = await Hazard.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
     });
     if (!hazard) {
-      return res.status(404).json({
-        error: "Hazard does not exist",
-      });
+      const error = new Error("Hazard does not exist");
+      error.statusCode = 404;
+      return next(error);
     }
     return res.status(200).json(hazard);
   } catch (error) {
-    if (error.name === "ValidationError") {
-      return res.status(400).json({
-        error: error.message,
-      });
-    }
-
-    if (error.name === "CastError") {
-      return res.status(400).json({
-        error: "Invalid hazard ID",
-      });
-    }
-
-    return res.status(500).json({
-      error: "Internal server error",
-    });
+    next(error);
   }
 };
 
-export const deleteHazard = async (req, res) => {
+export const deleteHazard = async (req, res, next) => {
   try {
     const id = req.params.id;
     const hazard = await Hazard.findByIdAndDelete(id);
     if (!hazard) {
-      return res.status(404).json({
-        error: "Hazard not found",
-      });
+      const error = new Error("Hazard does not exist");
+      error.statusCode = 404;
+      return next(error);
     }
     return res.status(200).json({
       message: "Hazard deleted successfully",
     });
   } catch (error) {
-    if (error.name === "CastError") {
-      return res.status(400).json({
-        error: "Invalid hazard ID",
-      });
-    }
-
-    return res.status(500).json({
-      error: "Internal server error",
-    });
+    next(error);
   }
 };
