@@ -6,14 +6,15 @@ import {
   getHazardById,
   updateHazard,
 } from "../controllers/hazardController.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router
-  .post("/", createHazard)
-  .get("/", getAllHazards)
-  .get("/:id", getHazardById)
-  .put("/:id", updateHazard)
-  .delete("/:id", deleteHazard);
+  .post("/", authMiddleware, createHazard)
+  .get("/", authMiddleware, getAllHazards)
+  .get("/:id", authMiddleware, getHazardById)
+  .put("/:id", authMiddleware, updateHazard)
+  .delete("/:id", authMiddleware, deleteHazard);
 
 export default router;

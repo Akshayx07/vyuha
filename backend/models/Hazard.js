@@ -2,7 +2,12 @@ import mongoose from "mongoose";
 
 const hazardSchema = new mongoose.Schema(
   {
-    typeofHazard: {
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    hazardType: {
       type: String,
       required: true,
     },

@@ -2,12 +2,14 @@ import express from "express";
 import { PORT, MONGO_URI } from "./config.js";
 import connectMongoDB from "./connection.js";
 import hazardRoutes from "./routes/hazardRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 
 app.use(express.json());
 
 app.use("/hazards", hazardRoutes);
+app.use("/auth", authRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
