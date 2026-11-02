@@ -4,6 +4,7 @@ dotenv.config();
 
 export const PORT = Number(process.env.PORT);
 export const MONGO_URI = process.env.MONGO_URI;
+export const TEST_MONGO_URI = process.env.TEST_MONGO_URI;
 
 if (!process.env.PORT) {
   throw new Error("PORT is missing from .env");

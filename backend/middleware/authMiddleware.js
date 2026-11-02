@@ -1,4 +1,4 @@
-import jsonwebtoken from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 export const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -17,8 +17,17 @@ export const authMiddleware = async (req, res, next) => {
 
   let decoded;
   try {
-    decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (error) {
+    if (
+      error instanceof jwt.JsonWebTokenError ||
+      error instanceof jwt.TokenExpiredError
+    ) {
+      const authError = new Error("Invalid or expired token");
+      authError.statusCode = 401;
+      return next(authError);
+    }
+
     return next(error);
   }
 
