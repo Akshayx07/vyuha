@@ -28,6 +28,17 @@ const hazard = {
   },
 };
 
+const severities = ["Low", "Medium", "High"];
+const statuses = ["Active", "Inactive"];
+
+const invalidPaginationQueries = [
+  "page=0",
+  "page=-1",
+  "limit=0",
+  "limit=101",
+  "page=abc",
+];
+
 let tokenA;
 let tokenB;
 let hazardIdA;
@@ -96,10 +107,10 @@ test("User A created hazard should return 201", async () => {
     .post("/hazards")
     .set("Authorization", `Bearer ${tokenA}`)
     .send(hazard);
-  hazardIdA = response.body._id;
-  expect(hazardIdA).toBeDefined();
-  expect(response.body.createdBy).toBeDefined();
   expect(response.status).toBe(201);
+  expect(response.body._id).toBeDefined();
+  expect(response.body.createdBy).toBeDefined();
+  hazardIdA = response.body._id;
 });
 
 test("User B created hazard should return 201", async () => {
@@ -107,10 +118,10 @@ test("User B created hazard should return 201", async () => {
     .post("/hazards")
     .set("Authorization", `Bearer ${tokenB}`)
     .send(hazard);
-  hazardIdB = response.body._id;
-  expect(hazardIdB).toBeDefined();
-  expect(response.body.createdBy).toBeDefined();
   expect(response.status).toBe(201);
+  expect(response.body._id).toBeDefined();
+  expect(response.body.createdBy).toBeDefined();
+  hazardIdB = response.body._id;
 });
 
 test("User A updated hazard should return 200", async () => {
@@ -143,3 +154,95 @@ test("User B deleting hazard should return 200", async () => {
     .set("Authorization", `Bearer ${tokenB}`);
   expect(response.status).toBe(200);
 });
+
+test("Authenticated user should get all hazards", async () => {
+  const response = await request(app)
+    .get("/hazards")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(Array.isArray(response.body.data)).toBe(true);
+  expect(response.body.pagination).toBeDefined();
+  expect(response.status).toBe(200);
+});
+
+test.each(severities)(
+  "Getting hazards with severity %s should return only matching hazards",
+  async (severity) => {
+    const response = await request(app)
+      .get(`/hazards?severity=${severity}`)
+      .set("Authorization", `Bearer ${tokenA}`);
+    expect(response.status).toBe(200);
+    expect(
+      response.body.data.every((hazard) => hazard.severity === severity),
+    ).toBe(true);
+  },
+);
+
+test.each(statuses)(
+  "Getting hazards with status %s should return only matching hazards",
+  async (status) => {
+    const response = await request(app)
+      .get(`/hazards?status=${status}`)
+      .set("Authorization", `Bearer ${tokenA}`);
+    expect(response.status).toBe(200);
+    expect(response.body.data.every((hazard) => hazard.status === status)).toBe(
+      true,
+    );
+  },
+);
+
+const filterCombinations = severities.flatMap((severity) =>
+  statuses.map((status) => [severity, status]),
+);
+
+test.each(filterCombinations)(
+  "Filtering hazards by severity %s and status %s",
+  async (severity, status) => {
+    const response = await request(app)
+      .get(`/hazards?severity=${severity}&status=${status}`)
+      .set("Authorization", `Bearer ${tokenA}`);
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(
+      response.body.data.every(
+        (hazard) => hazard.severity === severity && hazard.status === status,
+      ),
+    ).toBe(true);
+  },
+);
+
+test("Invalid severity should return 400", async () => {
+  const response = await request(app)
+    .get("/hazards?severity=Extreme")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(400);
+});
+
+test("Invalid status should return 400", async () => {
+  const response = await request(app)
+    .get("/hazards?status=Pending")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(400);
+});
+
+test("Valid pagination should return 200", async () => {
+  const response = await request(app)
+    .get("/hazards?page=1&limit=2")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(Array.isArray(response.body.data)).toBe(true);
+  expect(response.body.pagination.page).toBe(1);
+  expect(response.body.pagination.limit).toBe(2);
+  expect(response.body.data.length).toBeLessThanOrEqual(2);
+  expect(response.status).toBe(200);
+});
+
+test.each(invalidPaginationQueries)(
+  "Invalid pagination query %s should return 400",
+  async (query) => {
+    const response = await request(app)
+      .get(`/hazards?${query}`)
+      .set("Authorization", `Bearer ${tokenA}`);
+
+    expect(response.status).toBe(400);
+  },
+);

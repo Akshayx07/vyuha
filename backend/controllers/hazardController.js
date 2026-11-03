@@ -35,8 +35,22 @@ export const getAllHazards = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     let filter = {};
-    if (severity !== undefined) filter.severity = severity;
-    if (status !== undefined) filter.status = status;
+    if (severity !== undefined) {
+      if (!["Low", "Medium", "High"].includes(severity)) {
+        const error = new Error("Invalid severitys");
+        error.statusCode = 400;
+        return next(error);
+      }
+      filter.severity = severity;
+    }
+    if (status !== undefined) {
+      if (!["Active", "Inactive"].includes(status)) {
+        const error = new Error("Invalid status");
+        error.statusCode = 400;
+        return next(error);
+      }
+      filter.status = status;
+    }
 
     const total = await Hazard.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
@@ -65,7 +79,7 @@ export const getHazardById = async (req, res, next) => {
     }
     return res.status(200).json(hazard);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -79,6 +93,12 @@ export const updateHazard = async (req, res, next) => {
     if (severity !== undefined) updates.severity = severity;
     if (status !== undefined) updates.status = status;
     if (location !== undefined) updates.location = location;
+
+    if (Object.keys(updates).length === 0) {
+      const error = new Error("No fields provided for update");
+      error.statusCode = 400;
+      return next(error);
+    }
 
     const hazard = await Hazard.findOneAndUpdate(
       {
@@ -98,7 +118,7 @@ export const updateHazard = async (req, res, next) => {
     }
     return res.status(200).json(hazard);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -118,7 +138,7 @@ export const deleteHazard = async (req, res, next) => {
       message: "Hazard deleted successfully",
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
