@@ -246,3 +246,77 @@ test.each(invalidPaginationQueries)(
     expect(response.status).toBe(400);
   },
 );
+
+test("Hazard with valid ID should return 200", async () => {
+  const response = await request(app)
+    .get(`/hazards/${hazardIdA}`)
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.body._id).toBe(hazardIdA);
+  expect(response.status).toBe(200);
+});
+
+test("Hazard with ID that doesn't exist should return 404", async () => {
+  const response = await request(app)
+    .get("/hazards/507f1f77bcf86cd799439011")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(404);
+});
+
+test("Hazard with invalid ID should return 400", async () => {
+  const response = await request(app)
+    .get("/hazards/abcdefgh")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(400);
+});
+
+test("Nearby hazards with valid coordinates should return 200", async () => {
+  const response = await request(app)
+    .get("/hazards/nearby?longitude=83&latitude=25&maxDistance=5000")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(200);
+  expect(Array.isArray(response.body)).toBe(true);
+});
+
+test("Nearby hazards with invalid longitude should return 400", async () => {
+  const response = await request(app)
+    .get("/hazards/nearby?longitude=1001&latitude=25&maxDistance=5000")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(400);
+});
+
+test("Nearby hazards with invalid latitude should return 400", async () => {
+  const response = await request(app)
+    .get("/hazards/nearby?longitude=83&latitude=91&maxDistance=5000")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(400);
+});
+
+test("Nearby hazards with invalid maxDistance should return 400", async () => {
+  const response = await request(app)
+    .get("/hazards/nearby?longitude=83&latitude=25&maxDistance=0")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(400);
+});
+
+test("Nearby hazards with exceeding maxDistance should return 400", async () => {
+  const response = await request(app)
+    .get("/hazards/nearby?longitude=83&latitude=25&maxDistance=50001")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(400);
+});
+
+test("Nearby hazards with missing maxDistance should return 400", async () => {
+  const response = await request(app)
+    .get("/hazards/nearby?longitude=83&latitude=25")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(response.status).toBe(400);
+});
+
+test("Valid Nearby hazard should return 200", async () => {
+  const response = await request(app)
+    .get("/hazards/nearby?longitude=83&latitude=25&maxDistance=50000")
+    .set("Authorization", `Bearer ${tokenA}`);
+  expect(Array.isArray(response.body)).toBe(true);
+  expect(response.status).toBe(200);
+  expect(response.body.some((hazard) => hazard._id === hazardIdA)).toBe(true);
+});

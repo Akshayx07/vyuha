@@ -37,7 +37,7 @@ export const getAllHazards = async (req, res, next) => {
     let filter = {};
     if (severity !== undefined) {
       if (!["Low", "Medium", "High"].includes(severity)) {
-        const error = new Error("Invalid severitys");
+        const error = new Error("Invalid severity");
         error.statusCode = 400;
         return next(error);
       }
