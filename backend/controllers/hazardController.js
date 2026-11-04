@@ -2,11 +2,33 @@ import Hazard from "../models/Hazard.js";
 
 export const createHazard = async (req, res, next) => {
   try {
+    const allowedFields = ["hazardType", "severity", "location"];
+    if (Object.keys(req.body).some((field) => !allowedFields.includes(field))) {
+      const error = new Error("Invalid fields are provided");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const { hazardType, severity, location } = req.body;
+
+    if (
+      !location ||
+      typeof location !== "object" ||
+      Array.isArray(location) ||
+      location.type !== "Point" ||
+      !Array.isArray(location.coordinates) ||
+      location.coordinates.length !== 2
+    ) {
+      const error = new Error("Invalid location format");
+      error.statusCode = 400;
+      return next(error);
+    }
+
     const hazard = await Hazard.create({
       createdBy: req.user.userId,
-      hazardType: req.body.hazardType,
-      severity: req.body.severity,
-      location: req.body.location,
+      hazardType,
+      severity,
+      location,
     });
 
     return res.status(201).json(hazard);
@@ -86,8 +108,15 @@ export const getHazardById = async (req, res, next) => {
 export const updateHazard = async (req, res, next) => {
   try {
     const id = req.params.id;
-    const { hazardType, severity, status, location } = req.body;
 
+    const allowedFields = ["hazardType", "severity", "status", "location"];
+    if (Object.keys(req.body).some((field) => !allowedFields.includes(field))) {
+      const error = new Error("Invalid fields are provided");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const { hazardType, severity, status, location } = req.body;
     const updates = {};
     if (hazardType !== undefined) updates.hazardType = hazardType;
     if (severity !== undefined) updates.severity = severity;
