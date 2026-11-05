@@ -24,6 +24,26 @@ export const createHazard = async (req, res, next) => {
       return next(error);
     }
 
+    const [longitude, latitude] = location.coordinates;
+    if (
+      !Number.isFinite(longitude) ||
+      !Number.isFinite(latitude) ||
+      longitude < -180 ||
+      longitude > 180 ||
+      latitude < -90 ||
+      latitude > 90
+    ) {
+      const error = new Error("Invalid location coordinates");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    if (typeof hazardType !== "string" || !hazardType.trim()) {
+      const error = new Error("Hazard is required");
+      error.statusCode = 400;
+      return next(error);
+    }
+
     const hazard = await Hazard.create({
       createdBy: req.user.userId,
       hazardType,
@@ -118,10 +138,47 @@ export const updateHazard = async (req, res, next) => {
 
     const { hazardType, severity, status, location } = req.body;
     const updates = {};
-    if (hazardType !== undefined) updates.hazardType = hazardType;
+    if (hazardType !== undefined) {
+      if (typeof hazardType !== "string" || !hazardType.trim()) {
+        const error = new Error("Hazard is required");
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      updates.hazardType = hazardType;
+    }
     if (severity !== undefined) updates.severity = severity;
     if (status !== undefined) updates.status = status;
-    if (location !== undefined) updates.location = location;
+    if (location !== undefined) {
+      if (
+        !location ||
+        typeof location !== "object" ||
+        Array.isArray(location) ||
+        location.type !== "Point" ||
+        !Array.isArray(location.coordinates) ||
+        location.coordinates.length !== 2
+      ) {
+        const error = new Error("Invalid location format");
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      const [longitude, latitude] = location.coordinates;
+      if (
+        !Number.isFinite(longitude) ||
+        !Number.isFinite(latitude) ||
+        longitude < -180 ||
+        longitude > 180 ||
+        latitude < -90 ||
+        latitude > 90
+      ) {
+        const error = new Error("Invalid location coordinates");
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      updates.location = location;
+    }
 
     if (Object.keys(updates).length === 0) {
       const error = new Error("No fields provided for update");

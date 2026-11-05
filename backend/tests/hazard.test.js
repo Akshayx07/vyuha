@@ -320,3 +320,88 @@ test("Valid Nearby hazard should return 200", async () => {
   expect(response.status).toBe(200);
   expect(response.body.some((hazard) => hazard._id === hazardIdA)).toBe(true);
 });
+
+test("Empty hazardType should return 400", async () => {
+  const response = await request(app)
+    .post("/hazards")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      hazardType: "",
+      severity: "High",
+      location: {
+        type: "Point",
+        coordinates: [83, 25],
+      },
+    });
+  expect(response.status).toBe(400);
+});
+
+test("hazardType with only whitespace should return 400", async () => {
+  const response = await request(app)
+    .post("/hazards")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      hazardType: "   ",
+      severity: "High",
+      location: {
+        type: "Point",
+        coordinates: [83, 25],
+      },
+    });
+  expect(response.status).toBe(400);
+});
+
+test("Invalid longitude coordinates should return 400", async () => {
+  const response = await request(app)
+    .post("/hazards")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      hazardType: "Flood",
+      severity: "High",
+      location: {
+        type: "Point",
+        coordinates: [200, 25],
+      },
+    });
+  expect(response.status).toBe(400);
+});
+
+test("Invalid latitude coordinates should return 400", async () => {
+  const response = await request(app)
+    .post("/hazards")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      hazardType: "Flood",
+      severity: "High",
+      location: {
+        type: "Point",
+        coordinates: [83, 91],
+      },
+    });
+  expect(response.status).toBe(400);
+});
+
+test("Empty hazardType in update should return 400", async () => {
+  const response = await request(app)
+    .put(`/hazards/${hazardIdA}`)
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      hazardType: "",
+    });
+
+  expect(response.status).toBe(400);
+});
+
+test("Invalid location in update should return 400", async () => {
+  const response = await request(app)
+    .put(`/hazards/${hazardIdA}`)
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      location: {
+        type: "Point",
+        coordinates: [200, 25],
+      },
+    });
+
+  expect(response.status).toBe(400);
+});
