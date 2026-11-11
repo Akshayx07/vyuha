@@ -14,7 +14,10 @@ export const runEngine = (input) => {
       output += data.toString();
     });
 
+    let timeout;
+
     child.on("close", (code) => {
+      clearTimeout(timeout);
       if (code !== 0) {
         return reject(new Error(`C++ process failed with code ${code}`));
       }
@@ -30,6 +33,11 @@ export const runEngine = (input) => {
         return reject(error);
       }
     });
+
+    timeout = setTimeout(() => {
+      child.kill();
+      return reject(new Error("C++ process timed out"));
+    }, 5000);
 
     child.stdin.write(JSON.stringify(input));
     child.stdin.end();
