@@ -1,5 +1,6 @@
 import express from "express";
 import hazardRoutes from "./routes/hazardRoutes.js";
+import campRoutes from "./routes/campRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import engineRoutes from "./routes/engineRoutes.js";
 
@@ -8,6 +9,7 @@ const app = express();
 app.use(express.json());
 
 app.use("/hazards", hazardRoutes);
+app.use("/camps", campRoutes);
 app.use("/auth", authRoutes);
 app.use("/engine", engineRoutes);
 

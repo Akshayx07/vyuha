@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 
 export const runEngine = (input) => {
   return new Promise((resolve, reject) => {
+    // Windows builds produce engine.exe; Linux/macOS builds should use ./engine/engine
     const child = spawn("./engine/engine.exe");
 
     child.on("error", (error) => {
@@ -37,7 +38,7 @@ export const runEngine = (input) => {
     timeout = setTimeout(() => {
       child.kill();
       return reject(new Error("C++ process timed out"));
-    }, 5000);
+    }, 15000);
 
     child.stdin.write(JSON.stringify(input));
     child.stdin.end();
